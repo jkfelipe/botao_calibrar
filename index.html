@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calibração</title>
+    <style>
+        #message {
+            display: none;
+            color: green;
+        }
+    </style>
+</head>
+<body>
+    <h1>Calibração de Equipamento</h1>
+    
+    <button id="calibrateButton" onclick="startCalibration()">Calibrar</button>
+    <p id="message">Calibração completa!</p>
+
+    <script>
+        let pollingInterval;
+
+        function startCalibration() {
+            const button = document.getElementById("calibrateButton");
+            button.disabled = true;
+            button.innerText = "Calibrando...";
+
+            // Envia a requisição inicial para iniciar a calibração
+            fetch('start_calibration.php')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'started') {
+                        // Iniciar o monitoramento do status a cada 2 segundos
+                        pollingInterval = setInterval(checkCalibrationStatus, 2000);
+                    }
+                })
+                .catch(error => {
+                    console.error('Erro ao iniciar calibração:', error);
+                    button.disabled = false;
+                    button.innerText = "Calibrar";
+                });
+        }
+
+        function checkCalibrationStatus() {
+            // Verifica o status da calibração no servidor
+            fetch('check_status.php')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'complete') {
+                        // Calibração completa, interromper o polling
+                        clearInterval(pollingInterval);
+                        showCompletionMessage();
+                    }
+                })
+                .catch(error => {
+                    console.error('Erro ao verificar status:', error);
+                });
+        }
+
+        function showCompletionMessage() {
+            const button = document.getElementById("calibrateButton");
+            const message = document.getElementById("message");
+            message.style.display = "block";
+            
+            // Voltar o botão ao estado original após 3 segundos
+            setTimeout(() => {
+                button.innerText = "Calibrar";
+                button.disabled = false;
+                message.style.display = "none";
+            }, 3000); // Exibir a mensagem por 3 segundos
+        }
+    </script>
+</body>
+</html>
